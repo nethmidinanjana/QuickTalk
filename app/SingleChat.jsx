@@ -1,22 +1,21 @@
 import * as SplashScreen from "expo-splash-screen";
-import {
-  Image,
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { useEffect } from "react";
 import { useFonts } from "expo-font";
 import { StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
-import { Link } from "expo-router";
+import { Link, useLocalSearchParams } from "expo-router";
+import { NGROK_URL } from "@env";
+import { Image } from "expo-image";
 
 SplashScreen.preventAutoHideAsync();
 
 export default function SingleChat() {
+  const props = useLocalSearchParams();
+
+  console.log(props.uid);
+
   const avatar = require("../assets/images/profilepics/avatar2.jpg");
 
   const [loaded, error] = useFonts({
@@ -40,10 +39,23 @@ export default function SingleChat() {
           <Link href={"/Home"} asChild>
             <FontAwesome5 name={"chevron-left"} color={"gray"} size={25} />
           </Link>
-          <Image source={avatar} style={styles.dpImage} />
+          {props.usernameLetters == undefined ? (
+            <Image
+              source={NGROK_URL + "/profile-images/" + props.mobile + ".png"}
+              style={styles.dpImage}
+            />
+          ) : (
+            <View style={[styles.dpImage, { backgroundColor: "#FFECC8" }]}>
+              <Text style={{ fontSize: 20, color: "black" }}>
+                {props.usernameLetters}
+              </Text>
+            </View>
+          )}
           <View>
-            <Text style={styles.name}>Andrea Kim</Text>
-            <Text style={styles.online}>Online</Text>
+            <Text style={styles.name}>{props.username}</Text>
+            <Text style={styles.online}>
+              {props.status == 1 ? "Online" : "Offline"}
+            </Text>
           </View>
         </View>
         <View style={styles.callContainer}>
@@ -60,11 +72,11 @@ export default function SingleChat() {
           <Text>2024/10/02</Text>
         </View>
         <View style={styles.msgBox1}>
-          <Text>Hi Kevin.</Text>
+          <Text style={{ fontSize: 16 }}>Hi Kevin.</Text>
           <Text style={styles.timeText}>11:05 AM</Text>
         </View>
         <View style={styles.msgBox2}>
-          <Text>Hi Andrea, how are you?</Text>
+          <Text style={{ fontSize: 16 }}>Hi Andrea, how are you?</Text>
           <Text style={styles.timeText}>11:07 AM</Text>
         </View>
       </ScrollView>
@@ -100,6 +112,8 @@ const styles = StyleSheet.create({
     borderColor: "rgba(0, 0, 0, 0.09)",
     borderWidth: 1,
     borderRadius: 50,
+    justifyContent: "center",
+    alignItems: "center",
   },
   headerView1: {
     flexDirection: "row",

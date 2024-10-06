@@ -1,12 +1,14 @@
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import { useFonts } from "expo-font";
-import { Link } from "expo-router";
+import { Link, router } from "expo-router";
+import { Image } from "expo-image";
+import { NGROK_URL } from "@env";
 
 SplashScreen.preventAutoHideAsync();
 
-export function MessageContainer() {
+export function MessageContainer(props) {
   const avatar = require("../assets/images/profilepics/avatar2.jpg");
 
   const [loaded, error] = useFonts({
@@ -23,31 +25,67 @@ export function MessageContainer() {
     return null;
   }
   return (
-    <Link href="/SingleChat" asChild>
-      <Pressable style={styles.mainContainer}>
-        <View>
-          <Image source={avatar} style={styles.dpImage} />
-        </View>
-        <View style={styles.chatRow}>
-          {/* Message Container */}
-          <View style={{ flex: 1, rowGap: 6 }}>
-            <Text style={styles.name}>Tashi Gamage</Text>
-            <Text style={[styles.name, { fontSize: 16 }]} numberOfLines={1}>
-              Hello Kevin.hello
-              helooo...........................................
+    <Pressable
+      style={styles.mainContainer}
+      onPress={() => {
+        router.push({
+          pathname: "/SingleChat",
+          params: props,
+        });
+      }}
+    >
+      <View>
+        {props.dpFound ? (
+          <Image
+            source={NGROK_URL + "/profile-images/" + props.mobile + ".png"}
+            style={[
+              styles.dpImage,
+              props.status == 1
+                ? { borderColor: "#2A8B46" }
+                : { borderColor: "black" },
+            ]}
+          />
+        ) : (
+          <View
+            style={[
+              styles.dpImage,
+              { backgroundColor: "#F70B3C" },
+              props.status == 1
+                ? { borderColor: "#2A8B46" }
+                : { borderColor: "black" },
+            ]}
+          >
+            <Text style={{ fontSize: 20, color: "white" }}>
+              {props.usernameLetters}
             </Text>
           </View>
-
-          {/* Time and Count Container */}
-          <View style={styles.rightSection}>
-            <View style={styles.countContainer}>
-              <Text style={styles.countTxt}>3</Text>
-            </View>
-            <Text>11:34 AM</Text>
-          </View>
+        )}
+      </View>
+      <View style={styles.chatRow}>
+        {/* Message Container */}
+        <View style={{ flex: 1, rowGap: 6 }}>
+          <Text style={styles.name}>{props.username}</Text>
+          <Text style={[styles.name, { fontSize: 16 }]} numberOfLines={1}>
+            {props.message}
+          </Text>
         </View>
-      </Pressable>
-    </Link>
+
+        {/* Time and Count Container */}
+        <View style={styles.rightSection}>
+          {props.msgCount != 0 ? (
+            <View
+              style={[styles.countContainer, { backgroundColor: "#F70B3C" }]}
+            >
+              <Text style={styles.countTxt}>{props.msgCount}</Text>
+            </View>
+          ) : (
+            <View style={styles.countContainer}></View>
+          )}
+
+          <Text>{props.time}</Text>
+        </View>
+      </View>
+    </Pressable>
   );
 }
 
@@ -66,9 +104,10 @@ const styles = StyleSheet.create({
   dpImage: {
     width: 66,
     height: 66,
-    borderColor: "#2A8B46",
     borderWidth: 3,
     borderRadius: 50,
+    justifyContent: "center",
+    alignItems: "center",
   },
   chatRow: {
     flex: 1,
@@ -82,7 +121,6 @@ const styles = StyleSheet.create({
     fontFamily: "Roboto-Regular",
   },
   countContainer: {
-    backgroundColor: "#F70B3C",
     paddingVertical: 2,
     paddingHorizontal: 8,
     borderRadius: 50,
@@ -96,5 +134,6 @@ const styles = StyleSheet.create({
   rightSection: {
     flexDirection: "column",
     alignItems: "flex-end",
+    rowGap: 4,
   },
 });

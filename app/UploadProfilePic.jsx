@@ -10,7 +10,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect, useState } from "react";
-import { Link, router, useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
 import * as ImagePicker from "expo-image-picker";
 import { Image } from "expo-image";
@@ -94,7 +94,7 @@ export default function UploadProfilePic() {
                 console.log(json);
 
                 if (json.success) {
-                  router.replace("/Home");
+                  router.replace("/SignIn");
                 } else {
                   Alert.alert("Error", json.message);
                 }

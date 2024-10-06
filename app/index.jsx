@@ -10,8 +10,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
-import { registerRootComponent } from "expo";
-import { Link } from "expo-router";
+import { Link, router } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -22,6 +22,22 @@ export default function App() {
   const [loaded, error] = useFonts({
     "IstokWeb-Regular": require("../assets/fonts/IstokWeb-Regular.ttf"),
     "RobotoMono-Regular": require("../assets/fonts/RobotoMono-Regular.ttf"),
+  });
+
+  useEffect(() => {
+    async function checkUser() {
+      try {
+        const user = await AsyncStorage.getItem("user");
+
+        if (user != null) {
+          router.replace("/Home");
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    }
+
+    checkUser();
   });
 
   useEffect(() => {
@@ -57,8 +73,6 @@ export default function App() {
     </SafeAreaView>
   );
 }
-
-// registerRootComponent(App);
 
 const styles = StyleSheet.create({
   safeArea: {

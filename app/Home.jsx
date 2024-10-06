@@ -1,29 +1,46 @@
 import * as SplashScreen from "expo-splash-screen";
-import {
-  Image,
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
-import { useEffect } from "react";
+import { Image, Pressable, Text, TextInput, View } from "react-native";
+import { useEffect, useState } from "react";
 import { useFonts } from "expo-font";
-import { registerRootComponent } from "expo";
 import { StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
 import { MessageContainer } from "../components/MessageContainer";
 import { BottomBar } from "../components/BottomBar";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { NGROK_URL } from "@env";
+import { FlashList } from "@shopify/flash-list";
 
 SplashScreen.preventAutoHideAsync();
 
 export default function Home() {
+  const [chatArray, setChatArray] = useState([]);
+
   const dots = require("../assets/images/3dots.png");
 
   const [loaded, error] = useFonts({
     "Roboto-Regular": require("../assets/fonts/Roboto-Regular.ttf"),
   });
+
+  useEffect(() => {
+    async function loadChatList() {
+      const userJson = await AsyncStorage.getItem("user");
+      const user = JSON.parse(userJson);
+
+      console.log(NGROK_URL);
+      const response = await fetch(`${NGROK_URL}/LoadChatList?id=${user.id}`);
+
+      if (response.ok) {
+        const json = await response.json();
+
+        if (json.success) {
+          console.log(JSON.parse(json.jsonChatArray));
+          setChatArray(JSON.parse(json.jsonChatArray));
+        }
+      }
+    }
+    loadChatList();
+  }, []);
 
   useEffect(() => {
     if (loaded || error) {
@@ -54,24 +71,32 @@ export default function Home() {
         </Pressable>
       </View>
 
-      <ScrollView
-        style={{ marginTop: 20 }}
-        contentContainerStyle={styles.scrollViewContent}
-      >
-        <MessageContainer />
-        <MessageContainer />
-        <MessageContainer />
-        <MessageContainer />
-        <MessageContainer />
-        <MessageContainer />
-      </ScrollView>
+      <View style={{ flex: 1, marginTop: 20 }}>
+        <FlashList
+          data={chatArray}
+          renderItem={({ item }) => (
+            <MessageContainer
+              dpFound={item.profile_image_found}
+              mobile={item.other_user_mobile}
+              username={item.other_user_name}
+              {...(item.other_username_letter && {
+                usernameLetters: item.other_username_letter,
+              })}
+              message={item.message}
+              time={item.dateTime}
+              msgCount={item.unseen_chat_count}
+              uid={item.other_user_id}
+              status={item.other_user_status}
+            />
+          )}
+          estimatedItemSize={200}
+        />
+      </View>
+
       <BottomBar />
     </SafeAreaView>
   );
 }
-
-// registerRootComponent(Home);
-
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,

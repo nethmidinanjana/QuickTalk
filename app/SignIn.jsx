@@ -1,4 +1,5 @@
 import {
+  Alert,
   Image,
   Pressable,
   ScrollView,
@@ -10,14 +11,18 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
-import { useEffect } from "react";
-import { registerRootComponent } from "expo";
-import { Link } from "expo-router";
+import { useEffect, useState } from "react";
+import { Link, router } from "expo-router";
 import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
+import { NGROK_URL } from "@env";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 SplashScreen.preventAutoHideAsync();
 
 export default function SignIn() {
+  const [mobile, setMobile] = useState("");
+  const [password, setPassword] = useState("");
+
   const logoPath = require("../assets/images/logo.png");
 
   const [loaded, error] = useFonts({
@@ -48,34 +53,81 @@ export default function SignIn() {
             <TextInput
               style={styles.inputFields}
               placeholder={"Enter your mobile..."}
+              onChangeText={setMobile}
+              inputMode={"tel"}
             />
           </View>
           <View style={styles.inputView}>
             <Text style={styles.inputNameText}>Password</Text>
             <TextInput
               style={styles.inputFields}
-              placeholder={"Enter a password..."}
+              placeholder={"Enter your password..."}
+              onChangeText={setPassword}
+              secureTextEntry={true}
             />
           </View>
-          <Link href="/Home" asChild>
-            <Pressable style={styles.signUpBtn}>
-              <FontAwesome5 name="user-alt" size={19} color="white" />
-              <Text style={styles.signUpBtnText}>Sign In</Text>
+
+          <Pressable
+            style={styles.signUpBtn}
+            onPress={async () => {
+              const mobileRegex = /^07[01245678]{1}[0-9]{7}$/;
+
+              if (mobile.trim() === "") {
+                Alert.alert("Error", "Mobile number cannot be empty");
+              } else if (!mobileRegex.test(mobile)) {
+                Alert.alert(
+                  "Error",
+                  "Invalid mobile number format. Please enter a valid number."
+                );
+              } else if (password.trim() === "") {
+                Alert.alert("Error", "Password cannot be empty");
+              } else {
+                const response = await fetch(`${NGROK_URL}/SignIn`, {
+                  method: "POST",
+                  body: JSON.stringify({
+                    mobile: mobile,
+                    password: password,
+                  }),
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                });
+
+                if (response.ok) {
+                  const json = await response.json();
+
+                  if (json.success) {
+                    const user = json.user;
+
+                    try {
+                      await AsyncStorage.setItem("user", JSON.stringify(user));
+                      router.replace("/Home");
+                    } catch (error) {
+                      Alert.alert("Error", "Unable to process your request.");
+                    }
+                  } else {
+                    Alert.alert("Error", json.message);
+                  }
+                }
+              }
+            }}
+          >
+            <FontAwesome5 name="user-alt" size={19} color="white" />
+            <Text style={styles.signUpBtnText}>Sign In</Text>
+          </Pressable>
+
+          <Link href={"SignUp"} asChild>
+            <Pressable style={styles.toggleSignInBtn}>
+              <Text style={styles.toggleSignInTxt}>
+                New User? <Text style={styles.signinLink}>Sign Up</Text>
+              </Text>
             </Pressable>
           </Link>
-
-          <Pressable style={styles.toggleSignInBtn}>
-            <Text style={styles.toggleSignInTxt}>
-              New User? <Text style={styles.signinLink}>Sign Up</Text>
-            </Text>
-          </Pressable>
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
-
-// registerRootComponent(SignIn);
 
 const styles = StyleSheet.create({
   safeArea: {
