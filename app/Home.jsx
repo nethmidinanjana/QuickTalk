@@ -16,6 +16,7 @@ SplashScreen.preventAutoHideAsync();
 export default function Home() {
   const [chatArray, setChatArray] = useState([]);
   const [userId, setUserId] = useState();
+  const [text, setText] = useState("");
 
   const dots = require("../assets/images/3dots.png");
 
@@ -69,6 +70,18 @@ export default function Home() {
           type={"text"}
           placeholder="Search..."
           placeholderTextColor="gray"
+          onChangeText={async (text) => {
+            const response = await fetch(
+              `${NGROK_URL}/SearchUser?query=${text}`
+            );
+
+            if (response.ok) {
+              const data = await response.json();
+              console.log("Search results:", data);
+            } else {
+              console.error("Error searching user");
+            }
+          }}
         />
         <Pressable>
           <FontAwesome5 name="search" size={20} color="gray" />

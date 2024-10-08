@@ -1,5 +1,12 @@
 import * as SplashScreen from "expo-splash-screen";
-import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import {
+  Alert,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { useEffect, useState } from "react";
 import { useFonts } from "expo-font";
 import { StyleSheet } from "react-native";
@@ -9,12 +16,15 @@ import { BottomBar } from "../components/BottomBar";
 import * as ImagePicker from "expo-image-picker";
 import { Image } from "expo-image";
 import { NGROK_URL } from "@env";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
 
 SplashScreen.preventAutoHideAsync();
 
 export default function AddStories() {
   const addIcon = require("../assets/images/addImg.png");
   const [image, setImage] = useState(addIcon);
+  const [message, setMessage] = useState("");
 
   const storyImg1 = require("../assets/images/storyImgs/man-with-camera-near-river.jpg");
   const avatar1 = require("../assets/images/profilepics/avatar.jpg");
@@ -59,9 +69,46 @@ export default function AddStories() {
           multiline={true}
           numberOfLines={6}
           placeholder="Enter your message..."
+          value={message}
+          onChangeText={setMessage}
         />
 
-        <Pressable style={styles.uploadImgBtn}>
+        <Pressable
+          style={styles.uploadImgBtn}
+          onPress={async (event) => {
+            event.persist();
+            const userJson = await AsyncStorage.getItem("user");
+            const user = JSON.parse(userJson);
+
+            const formData = new FormData();
+            formData.append("uid", user.id);
+            formData.append("message", message);
+            formData.append("storyImage", {
+              name: "stoyImage",
+              type: "image/png",
+              uri: image,
+            });
+
+            const response = await fetch(`${NGROK_URL}/AddStories`, {
+              method: "POST",
+              body: formData,
+              headers: {
+                "Content-Type": "multipart/form-data",
+              },
+            });
+
+            if (response.ok) {
+              const json = await response.json();
+
+              if (json.success) {
+                Alert.alert("Success", json.message);
+                router.replace("/Stories");
+              } else {
+                Alert.alert("Error", json.message);
+              }
+            }
+          }}
+        >
           <Text style={styles.uploadImgBtnText}>Upload</Text>
           <FontAwesome5 name="upload" size={19} color="white" />
         </Pressable>

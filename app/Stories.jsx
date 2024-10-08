@@ -1,6 +1,6 @@
 import * as SplashScreen from "expo-splash-screen";
 import { Pressable, ScrollView, Text, View } from "react-native";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useFonts } from "expo-font";
 import { StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -8,21 +8,37 @@ import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
 import { BottomBar } from "../components/BottomBar";
 import { StoryContainer } from "../components/StoryContainer";
 import { router } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { NGROK_URL } from "@env";
+import { FlashList } from "@shopify/flash-list";
 
 SplashScreen.preventAutoHideAsync();
 
 export default function Stories() {
-  const avatar1 = require("../assets/images/profilepics/avatar.jpg");
-  const avatar2 = require("../assets/images/profilepics/avatar2.jpg");
-  const avatar3 = require("../assets/images/profilepics/avatar3.png");
-
-  const storyImg1 = require("../assets/images/storyImgs/man-with-camera-near-river.jpg");
-  const storyImg2 = require("../assets/images/storyImgs/beautiful-butterfly-nature.jpg");
-  const storyImg3 = require("../assets/images/storyImgs/photorealistic-view-tree-nature-with-branches-trunk.jpg");
+  const [storiesArray, setStoriesArray] = useState([]);
 
   const [loaded, error] = useFonts({
     "Roboto-Regular": require("../assets/fonts/Roboto-Regular.ttf"),
   });
+
+  useEffect(() => {
+    async function loadStories() {
+      const userJson = await AsyncStorage.getItem("user");
+      const user = JSON.parse(userJson);
+      console.log(user.id);
+      const response = await fetch(`${NGROK_URL}/LoadStories`);
+
+      if (response.ok) {
+        const json = await response.json();
+        console.log(json);
+        setStoriesArray(json);
+        console.log(storiesArray);
+      }
+    }
+    // setInterval(() => {
+    loadStories();
+    // }, 5000);
+  }, []);
 
   useEffect(() => {
     if (loaded || error) {
@@ -33,6 +49,7 @@ export default function Stories() {
   if (!loaded && !error) {
     return null;
   }
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
@@ -46,27 +63,21 @@ export default function Stories() {
           <FontAwesome5 name={"plus"} color={"white"} size={17} />
         </Pressable>
       </View>
-      <ScrollView contentContainerStyle={styles.scrollViewContent}>
-        <StoryContainer
-          text={
-            "Your full overlay text goes here. Add more text to make it longer.Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus imperdiet, nulla et dictum interdum, nisi lorem egestas odio, vitae scelerisque enim ligula venenatis dolor. Maecenas nisl est, ultrices nec congue eget, auctor vitae massa."
-          }
-          imagePath={avatar1}
-          storyImg={storyImg1}
+      <View style={styles.container}>
+        <FlashList
+          data={storiesArray}
+          renderItem={({ item }) => (
+            <StoryContainer
+              text={item.message}
+              imagePath={
+                NGROK_URL + "/profile-images/" + item.userMobile + ".png"
+              }
+              storyImg={NGROK_URL + "/story-images/" + item.id + ".png"}
+            />
+          )}
+          estimatedItemSize={200}
         />
-        <StoryContainer
-          text={"Your full overlay text goes here."}
-          imagePath={avatar2}
-          storyImg={storyImg2}
-        />
-        <StoryContainer
-          text={
-            "Your full overlay text goes here. Add more text to make it longer.Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus imperdiet, nulla et dictum interdum, "
-          }
-          imagePath={avatar3}
-          storyImg={storyImg3}
-        />
-      </ScrollView>
+      </View>
 
       <BottomBar />
     </SafeAreaView>
@@ -100,8 +111,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-
-  scrollViewContent: {
+  container: {
+    flex: 1,
     paddingBottom: 90,
   },
   storyContainer: {

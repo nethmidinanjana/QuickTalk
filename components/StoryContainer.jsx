@@ -1,8 +1,9 @@
 import * as SplashScreen from "expo-splash-screen";
-import { Image, ScrollView, Text, View, Pressable } from "react-native";
+import { ScrollView, Text, View, Pressable } from "react-native";
 import { useEffect, useState } from "react";
 import { useFonts } from "expo-font";
 import { StyleSheet } from "react-native";
+import { Image } from "expo-image";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -26,8 +27,7 @@ export function StoryContainer({ text, imagePath, storyImg }) {
   }
 
   const handleTextLayout = (e) => {
-    const { lines } = e.nativeEvent;
-    if (!textChecked && lines.length > 2) {
+    if (!textChecked && e.nativeEvent.lines.length > 2) {
       setIsTextOverFlowing(true);
       setTextChecked(true);
     }
@@ -43,7 +43,7 @@ export function StoryContainer({ text, imagePath, storyImg }) {
 
       <View style={styles.overlayContent}>
         {showFullText ? (
-          <ScrollView style={styles.scrollView} nestedScrollEnabled={true}>
+          <ScrollView style={{ maxHeight: 150 }} nestedScrollEnabled={true}>
             <Text style={styles.overlayText}>{text}</Text>
             <Pressable onPress={() => setShowFullText(false)}>
               <Text style={styles.seeMoreText}>See less...</Text>
@@ -77,6 +77,8 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     position: "relative",
     marginTop: 25,
+    borderColor: "gray",
+    borderWidth: 1,
   },
   storyImg: {
     width: "100%",
