@@ -1,6 +1,13 @@
 import * as SplashScreen from "expo-splash-screen";
-import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
-import { useEffect } from "react";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+import { useEffect, useState } from "react";
 import { useFonts } from "expo-font";
 import { StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -8,13 +15,24 @@ import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
 import { Link, useLocalSearchParams } from "expo-router";
 import { NGROK_URL } from "@env";
 import { Image } from "expo-image";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { FlashList } from "@shopify/flash-list";
 
 SplashScreen.preventAutoHideAsync();
 
 export default function SingleChat() {
+  const [chatArray, setChatArray] = useState({});
+  const [ws, setWs] = useState(null);
+  const [message, setMessage] = useState("");
+  const [userId, setUserId] = useState();
+
   const props = useLocalSearchParams();
 
   console.log(props.uid);
+  console.log(props.loggedUserId);
+
+  const selectedUserId = props.uid;
+  const loggededUserId = props.loggedUserId;
 
   const avatar = require("../assets/images/profilepics/avatar2.jpg");
 
@@ -22,6 +40,76 @@ export default function SingleChat() {
     "Roboto-Regular": require("../assets/fonts/Roboto-Regular.ttf"),
     "Poppins-Regular": require("../assets/fonts/Poppins-Regular.ttf"),
   });
+  console.log(NGROK_URL);
+  useEffect(() => {
+    console.log(`${NGROK_URL}/chatSocket`);
+
+    const webSocket = new WebSocket(`${NGROK_URL}/chatSocket`);
+
+    webSocket.onopen = () => {
+      console.log("Connectd to websocket server");
+      console.log(loggededUserId);
+
+      if (loggededUserId && selectedUserId) {
+        webSocket.send(`USER_ID:${loggededUserId}:${selectedUserId}`);
+      }
+    };
+
+    webSocket.onmessage = (event) => {
+      const receivedMessage = event.data;
+      console.log("Received message: " + receivedMessage);
+
+      try {
+        const parsedMessage = JSON.parse(receivedMessage);
+        console.log("Parsed chatArray: ", parsedMessage);
+
+        setChatArray((prevChatArray) => {
+          return {
+            ...prevChatArray,
+            ...parsedMessage,
+          };
+        });
+      } catch (error) {
+        console.log("Error: " + error);
+      }
+    };
+
+    webSocket.onclose = () => {
+      console.log("Disconnected from websocket server");
+    };
+
+    webSocket.onerror = (error) => {
+      console.log("WebSocket error: " + error.message);
+    };
+
+    setWs(webSocket);
+
+    return () => {
+      webSocket.close();
+    };
+  }, []);
+
+  useEffect(() => {
+    async function loadChats() {
+      const userJson = await AsyncStorage.getItem("user");
+      const user = JSON.parse(userJson);
+      setUserId(user.id);
+
+      const response = await fetch(
+        `${NGROK_URL}/LoadChats?logged_user_id=${user.id}&selected_user_id=${props.uid}`
+      );
+
+      if (response.ok) {
+        const chatArray = await response.json();
+        console.log(chatArray);
+        setChatArray(chatArray);
+      }
+    }
+
+    // setInterval(() => {
+    loadChats();
+    // }, 5000);
+  }, []);
 
   useEffect(() => {
     if (loaded || error) {
@@ -29,11 +117,20 @@ export default function SingleChat() {
     }
   }, [loaded, error]);
 
+  const sendMessage = () => {
+    if (ws && message) {
+      const formattedMessage = `${userId}:${selectedUserId}:${message}`;
+      ws.send(formattedMessage);
+      setMessage("");
+    }
+  };
+
   if (!loaded && !error) {
     return null;
   }
   return (
     <SafeAreaView style={styles.safeArea}>
+      {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerView1}>
           <Link href={"/Home"} asChild>
@@ -67,25 +164,80 @@ export default function SingleChat() {
           </Pressable>
         </View>
       </View>
-      <ScrollView contentContainerStyle={styles.scrollViewContent}>
-        <View style={styles.dateView}>
-          <Text>2024/10/02</Text>
-        </View>
-        <View style={styles.msgBox1}>
-          <Text style={{ fontSize: 16 }}>Hi Kevin.</Text>
-          <Text style={styles.timeText}>11:05 AM</Text>
-        </View>
-        <View style={styles.msgBox2}>
-          <Text style={{ fontSize: 16 }}>Hi Andrea, how are you?</Text>
-          <Text style={styles.timeText}>11:07 AM</Text>
-        </View>
-      </ScrollView>
+
+      {/* Header */}
+
+      {/* Chat part */}
+
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={80}
+      >
+        {Object.keys(chatArray).length > 0 ? (
+          <View style={{ flex: 1 }}>
+            <FlashList
+              data={Object.keys(chatArray)}
+              renderItem={({ item: date }) => {
+                const messages = chatArray[date];
+
+                return (
+                  <View>
+                    <View style={styles.dateView}>
+                      <Text style={{ color: "gray" }}>{date}</Text>
+                    </View>
+
+                    {messages.map((message, index) => {
+                      return (
+                        <View key={index} style={styles.scrollViewContent}>
+                          {message.side === "left" ? (
+                            <View style={styles.msgBox1}>
+                              <Text style={{ fontSize: 16 }}>
+                                {message.message}
+                              </Text>
+                              <Text style={styles.timeText}>
+                                {message.time}
+                              </Text>
+                            </View>
+                          ) : (
+                            <View style={styles.msgBox2}>
+                              <Text style={{ fontSize: 16 }}>
+                                {message.message}
+                              </Text>
+                              <Text style={styles.timeText}>
+                                {message.time}
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                      );
+                    })}
+                  </View>
+                );
+              }}
+              estimatedItemSize={200}
+            />
+          </View>
+        ) : (
+          <Text style={styles.noChatsText}>Say Hi! 😀</Text>
+        )}
+      </KeyboardAvoidingView>
+      {/* Chat part */}
+
+      {/* Send mesg part */}
       <View style={styles.bottomView}>
-        <TextInput type={"text"} style={styles.msginput} />
-        <View style={styles.send}>
+        <TextInput
+          type={"text"}
+          style={styles.msginput}
+          onChangeText={setMessage}
+          value={message}
+        />
+        <Pressable style={styles.send} onPress={sendMessage}>
           <FontAwesome5 name={"paper-plane"} color={"white"} size={20} />
-        </View>
+        </Pressable>
       </View>
+
+      {/* Send mesg part */}
     </SafeAreaView>
   );
 }
@@ -135,9 +287,8 @@ const styles = StyleSheet.create({
     columnGap: 25,
   },
   scrollViewContent: {
-    paddingBottom: 80,
     paddingHorizontal: 20,
-    marginTop: 15,
+    marginTop: 5,
   },
   bottomView: {
     flexDirection: "row",
@@ -147,7 +298,7 @@ const styles = StyleSheet.create({
     right: 0,
     paddingVertical: 7,
     paddingHorizontal: 20,
-    backgroundColor: "rgba(247, 11, 60, 0.22)",
+    backgroundColor: "#FDC9D4",
     alignItems: "center",
     justifyContent: "space-between",
   },
@@ -158,7 +309,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 24,
     paddingHorizontal: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.73)",
+    backgroundColor: "white",
   },
   send: {
     flex: 1,
@@ -178,7 +329,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingVertical: 10,
     maxWidth: "80%",
-    marginBottom: 10,
+    marginTop: 5,
   },
   msgBox2: {
     alignSelf: "flex-end",
@@ -187,7 +338,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingVertical: 10,
     maxWidth: "80%",
-    marginBottom: 10,
+    marginTop: 5,
   },
   timeText: {
     alignSelf: "flex-end",
@@ -198,7 +349,13 @@ const styles = StyleSheet.create({
     width: "100%",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 5,
+    marginTop: 20,
     marginBottom: 6,
+  },
+  noChatsText: {
+    textAlign: "center",
+    marginTop: 20,
+    fontSize: 16,
+    color: "gray",
   },
 });

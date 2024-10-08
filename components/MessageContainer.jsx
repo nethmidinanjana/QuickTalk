@@ -49,7 +49,7 @@ export function MessageContainer(props) {
           <View
             style={[
               styles.dpImage,
-              { backgroundColor: "#F70B3C" },
+              { backgroundColor: "#D6A52C" },
               props.status == 1
                 ? { borderColor: "#2A8B46" }
                 : { borderColor: "black" },
@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
   dpImage: {
     width: 66,
     height: 66,
-    borderWidth: 3,
+    borderWidth: 4,
     borderRadius: 50,
     justifyContent: "center",
     alignItems: "center",

@@ -14,6 +14,8 @@ import { StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { BottomBar } from "../components/BottomBar";
 import { Picker } from "@react-native-picker/picker";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -105,7 +107,13 @@ export default function Profile() {
         <Pressable style={[styles.Btn, { backgroundColor: "#F70B3C" }]}>
           <Text style={styles.BtnText}>Update Profile</Text>
         </Pressable>
-        <Pressable style={[styles.Btn, { backgroundColor: "black" }]}>
+        <Pressable
+          style={[styles.Btn, { backgroundColor: "black" }]}
+          onPress={() => {
+            AsyncStorage.removeItem("user");
+            router.replace("/");
+          }}
+        >
           <Text style={styles.BtnText}>Logout</Text>
         </Pressable>
       </ScrollView>

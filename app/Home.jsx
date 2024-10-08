@@ -15,6 +15,7 @@ SplashScreen.preventAutoHideAsync();
 
 export default function Home() {
   const [chatArray, setChatArray] = useState([]);
+  const [userId, setUserId] = useState();
 
   const dots = require("../assets/images/3dots.png");
 
@@ -26,6 +27,7 @@ export default function Home() {
     async function loadChatList() {
       const userJson = await AsyncStorage.getItem("user");
       const user = JSON.parse(userJson);
+      setUserId(user.id);
 
       console.log(NGROK_URL);
       const response = await fetch(`${NGROK_URL}/LoadChatList?id=${user.id}`);
@@ -39,7 +41,9 @@ export default function Home() {
         }
       }
     }
+    // setInterval(() => {
     loadChatList();
+    // }, 5000);
   }, []);
 
   useEffect(() => {
@@ -71,7 +75,7 @@ export default function Home() {
         </Pressable>
       </View>
 
-      <View style={{ flex: 1, marginTop: 20 }}>
+      <View style={{ flex: 1, marginTop: 20, marginBottom: 70 }}>
         <FlashList
           data={chatArray}
           renderItem={({ item }) => (
@@ -87,6 +91,7 @@ export default function Home() {
               msgCount={item.unseen_chat_count}
               uid={item.other_user_id}
               status={item.other_user_status}
+              loggedUserId={userId}
             />
           )}
           estimatedItemSize={200}

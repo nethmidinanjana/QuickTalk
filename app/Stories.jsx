@@ -2,12 +2,12 @@ import * as SplashScreen from "expo-splash-screen";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { useEffect } from "react";
 import { useFonts } from "expo-font";
-import { registerRootComponent } from "expo";
 import { StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
 import { BottomBar } from "../components/BottomBar";
 import { StoryContainer } from "../components/StoryContainer";
+import { router } from "expo-router";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -37,7 +37,12 @@ export default function Stories() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
         <Text style={styles.headerMainTxt}>Stories</Text>
-        <Pressable style={styles.plusIconContainer}>
+        <Pressable
+          style={styles.plusIconContainer}
+          onPress={() => {
+            router.push("/AddStories");
+          }}
+        >
           <FontAwesome5 name={"plus"} color={"white"} size={17} />
         </Pressable>
       </View>
@@ -67,8 +72,6 @@ export default function Stories() {
     </SafeAreaView>
   );
 }
-
-// registerRootComponent(Stories);
 
 const styles = StyleSheet.create({
   safeArea: {
