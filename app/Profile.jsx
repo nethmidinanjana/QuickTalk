@@ -1,6 +1,6 @@
 import * as SplashScreen from "expo-splash-screen";
 import {
-  Image,
+  Alert,
   Pressable,
   ScrollView,
   Text,
@@ -9,20 +9,52 @@ import {
 } from "react-native";
 import { useEffect, useState } from "react";
 import { useFonts } from "expo-font";
-import { registerRootComponent } from "expo";
 import { StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { BottomBar } from "../components/BottomBar";
 import { Picker } from "@react-native-picker/picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
+import * as ImagePicker from "expo-image-picker";
+import { Image } from "expo-image";
+import { NGROK_URL } from "@env";
 
 SplashScreen.preventAutoHideAsync();
 
 export default function Profile() {
-  const avatar = require("../assets/images/profilepics/avatar2.jpg");
+  const addIcon = require("../assets/images/addImg.png");
+
   const [selectedDistrict, setSelectedDistrict] = useState();
   const [selectedCity, setSelectedCity] = useState();
+  const [userName, setUserName] = useState("");
+  const [mobile, setMobile] = useState("");
+  const [profilePic, setProfilePic] = useState("");
+  const [userId, setUserId] = useState("");
+
+  useEffect(() => {
+    async function loadUser() {
+      const userJson = await AsyncStorage.getItem("user");
+      const user = JSON.parse(userJson);
+      setUserId(user.id);
+
+      const response = await fetch(`${NGROK_URL}/LoadUser?id=${user.id}`);
+
+      if (response.ok) {
+        const json = await response.json();
+
+        if (json.success) {
+          setMobile(json.mobile);
+          setUserName(json.userName);
+          setProfilePic(
+            `${NGROK_URL}/profile-images/${
+              json.mobile
+            }.png?timestamp=${new Date().getTime()}`
+          );
+        }
+      }
+    }
+    loadUser();
+  }, []);
 
   const [loaded, error] = useFonts({
     "Roboto-Regular": require("../assets/fonts/Roboto-Regular.ttf"),
@@ -46,9 +78,19 @@ export default function Profile() {
       </View>
       <ScrollView contentContainerStyle={styles.scrollViewContent}>
         <View style={styles.imageContainer}>
-          <Image source={avatar} style={styles.profileImage} />
+          <Image source={profilePic} style={styles.profileImage} />
+
           <View style={styles.overlayContainer}>
-            <Pressable style={styles.overlayButton}>
+            <Pressable
+              style={styles.overlayButton}
+              onPress={async () => {
+                let result = await ImagePicker.launchImageLibraryAsync({});
+
+                if (!result.canceled) {
+                  setProfilePic(result.assets[0].uri);
+                }
+              }}
+            >
               <Text style={styles.overlayButtonText}>Select Image</Text>
             </Pressable>
           </View>
@@ -58,7 +100,8 @@ export default function Profile() {
           <TextInput
             type={"text"}
             style={styles.textinput}
-            value={"Andrea Kim"}
+            value={userName}
+            onChangeText={setUserName}
           />
         </View>
         <View style={{ marginTop: 10, rowGap: 10 }}>
@@ -66,7 +109,7 @@ export default function Profile() {
           <TextInput
             type={"text"}
             style={styles.textinput}
-            value={"0778377354"}
+            value={mobile}
             editable={false}
           />
         </View>
@@ -104,14 +147,50 @@ export default function Profile() {
           </View>
         </View>
 
-        <Pressable style={[styles.Btn, { backgroundColor: "#F70B3C" }]}>
+        <Pressable
+          style={[styles.Btn, { backgroundColor: "#F70B3C" }]}
+          onPress={async () => {
+            const formData = new FormData();
+            formData.append("username", userName);
+            formData.append("userId", userId);
+            formData.append("profilePic", {
+              name: "profilePic",
+              type: "image/png",
+              uri: profilePic,
+            });
+            const response = await fetch(`${NGROK_URL}/UpdateProfile`, {
+              method: "POST",
+              body: formData,
+            });
+
+            if (response.ok) {
+              const json = await response.json();
+
+              if (json.success) {
+                router.replace("/Profile");
+              } else {
+                Alert.alert("Error", json.message);
+              }
+            }
+          }}
+        >
           <Text style={styles.BtnText}>Update Profile</Text>
         </Pressable>
         <Pressable
           style={[styles.Btn, { backgroundColor: "black" }]}
-          onPress={() => {
-            AsyncStorage.removeItem("user");
-            router.replace("/");
+          onPress={async () => {
+            const response = await fetch(
+              `${NGROK_URL}/SetOffline?id=${userId}`
+            );
+
+            if (response.ok) {
+              const json = await response.json();
+
+              if (json.success) {
+                AsyncStorage.removeItem("user");
+                router.replace("/");
+              }
+            }
           }}
         >
           <Text style={styles.BtnText}>Logout</Text>
@@ -122,8 +201,6 @@ export default function Profile() {
     </SafeAreaView>
   );
 }
-
-// registerRootComponent(Profile);
 
 const styles = StyleSheet.create({
   safeArea: {

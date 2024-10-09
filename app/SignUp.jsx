@@ -65,6 +65,19 @@ export default function SignUp() {
               placeholder={"Enter a username..."}
               onChangeText={setUsername}
               inputMode={"text"}
+              onEndEditing={async () => {
+                const response = await fetch(
+                  `${NGROK_URL}/CheckUsernameAvailable?username=${username}`
+                );
+
+                if (response.ok) {
+                  const json = await response.json();
+
+                  if (json.success) {
+                    Alert.alert("Error", json.message);
+                  }
+                }
+              }}
             />
           </View>
           <View style={styles.inputView}>

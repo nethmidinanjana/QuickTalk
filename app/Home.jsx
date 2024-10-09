@@ -37,7 +37,6 @@ export default function Home() {
         const json = await response.json();
 
         if (json.success) {
-          console.log(JSON.parse(json.jsonChatArray));
           setChatArray(JSON.parse(json.jsonChatArray));
         }
       }
@@ -72,14 +71,16 @@ export default function Home() {
           placeholderTextColor="gray"
           onChangeText={async (text) => {
             const response = await fetch(
-              `${NGROK_URL}/SearchUser?query=${text}`
+              `${NGROK_URL}/LoadChatList?id=${userId}&query=${text}`
             );
 
             if (response.ok) {
-              const data = await response.json();
-              console.log("Search results:", data);
-            } else {
-              console.error("Error searching user");
+              const json = await response.json();
+
+              if (json.success) {
+                console.log(JSON.parse(json.jsonChatArray));
+                setChatArray(JSON.parse(json.jsonChatArray));
+              }
             }
           }}
         />

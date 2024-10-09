@@ -37,7 +37,9 @@ export function MessageContainer(props) {
       <View>
         {props.dpFound ? (
           <Image
-            source={NGROK_URL + "/profile-images/" + props.mobile + ".png"}
+            source={`${NGROK_URL}/profile-images/${
+              props.mobile
+            }.png?timestamp=${new Date().getTime()}`}
             style={[
               styles.dpImage,
               props.status == 1

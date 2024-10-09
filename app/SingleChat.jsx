@@ -7,7 +7,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useFonts } from "expo-font";
 import { StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -25,6 +25,9 @@ export default function SingleChat() {
   const [ws, setWs] = useState(null);
   const [message, setMessage] = useState("");
   const [userId, setUserId] = useState();
+  const [isMounted, setIsMounted] = useState(false);
+
+  const listRef = useRef(null);
 
   const props = useLocalSearchParams();
 
@@ -42,8 +45,6 @@ export default function SingleChat() {
   });
   console.log(NGROK_URL);
   useEffect(() => {
-    console.log(`${NGROK_URL}/chatSocket`);
-
     const webSocket = new WebSocket(`${NGROK_URL}/chatSocket`);
 
     webSocket.onopen = () => {
@@ -117,6 +118,20 @@ export default function SingleChat() {
     }
   }, [loaded, error]);
 
+  useEffect(() => {
+    if (isMounted && Object.keys(chatArray).length > 0 && listRef.current) {
+      const timeout = setTimeout(() => {
+        listRef.current.scrollToEnd({ animated: true });
+      }, 100);
+
+      return () => clearTimeout(timeout);
+    }
+  }, [chatArray, isMounted]);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   const sendMessage = () => {
     if (ws && message) {
       const formattedMessage = `${userId}:${selectedUserId}:${message}`;
@@ -177,6 +192,7 @@ export default function SingleChat() {
         {Object.keys(chatArray).length > 0 ? (
           <View style={{ flex: 1 }}>
             <FlashList
+              ref={listRef}
               data={Object.keys(chatArray)}
               renderItem={({ item: date }) => {
                 const messages = chatArray[date];

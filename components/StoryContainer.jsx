@@ -7,7 +7,12 @@ import { Image } from "expo-image";
 
 SplashScreen.preventAutoHideAsync();
 
-export function StoryContainer({ text, imagePath, storyImg }) {
+export function StoryContainer({
+  text,
+  imagePath,
+  storyImg,
+  other_username_letter,
+}) {
   const [showFullText, setShowFullText] = useState(false);
   const [isTextOverFlowing, setIsTextOverFlowing] = useState(false);
   const [textChecked, setTextChecked] = useState(false);
@@ -38,7 +43,13 @@ export function StoryContainer({ text, imagePath, storyImg }) {
       <Image source={storyImg} style={styles.storyImg} />
 
       <View style={styles.topLeftOverlay}>
-        <Image source={imagePath} style={styles.profileImg} />
+        {imagePath ? (
+          <Image source={imagePath} style={styles.profileImg} />
+        ) : (
+          <View style={styles.placeholder}>
+            <Text style={styles.placeholderText}>{other_username_letter}</Text>
+          </View>
+        )}
       </View>
 
       <View style={styles.overlayContent}>
@@ -96,6 +107,21 @@ const styles = StyleSheet.create({
   topLeftText: {
     color: "#fff",
     fontSize: 16,
+    fontWeight: "bold",
+  },
+  placeholder: {
+    width: 66,
+    height: 66,
+    borderColor: "white",
+    borderWidth: 6,
+    borderRadius: 50,
+    backgroundColor: "gray", // Placeholder background color
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  placeholderText: {
+    color: "#fff",
+    fontSize: 30,
     fontWeight: "bold",
   },
 

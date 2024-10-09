@@ -64,19 +64,30 @@ export default function Stories() {
         </Pressable>
       </View>
       <View style={styles.container}>
-        <FlashList
-          data={storiesArray}
-          renderItem={({ item }) => (
-            <StoryContainer
-              text={item.message}
-              imagePath={
-                NGROK_URL + "/profile-images/" + item.userMobile + ".png"
-              }
-              storyImg={NGROK_URL + "/story-images/" + item.id + ".png"}
-            />
-          )}
-          estimatedItemSize={200}
-        />
+        {storiesArray.length != 0 ? (
+          <FlashList
+            data={storiesArray}
+            renderItem={({ item }) => (
+              <StoryContainer
+                text={item.message}
+                imagePath={
+                  item.profile_image_found
+                    ? NGROK_URL + "/profile-images/" + item.userMobile + ".png"
+                    : null
+                }
+                other_username_letter={
+                  item.profile_image_found ? null : item.other_username_letter
+                }
+                storyImg={NGROK_URL + "/story-images/" + item.id + ".png"}
+              />
+            )}
+            estimatedItemSize={200}
+          />
+        ) : (
+          <Text style={styles.noStoriesTxt}>
+            There are no stories yet! Be the first to post one.
+          </Text>
+        )}
       </View>
 
       <BottomBar />
@@ -118,5 +129,12 @@ const styles = StyleSheet.create({
   storyContainer: {
     width: "100%",
     borderRadius: 5,
+  },
+  noStoriesTxt: {
+    fontSize: 20,
+    alignSelf: "center",
+    fontFamily: "Roboto-Regular",
+    marginTop: 30,
+    textAlign: "center",
   },
 });
