@@ -24,8 +24,6 @@ SplashScreen.preventAutoHideAsync();
 export default function Profile() {
   const addIcon = require("../assets/images/addImg.png");
 
-  const [selectedDistrict, setSelectedDistrict] = useState();
-  const [selectedCity, setSelectedCity] = useState();
   const [userName, setUserName] = useState("");
   const [mobile, setMobile] = useState("");
   const [profilePic, setProfilePic] = useState("");
@@ -112,39 +110,6 @@ export default function Profile() {
             value={mobile}
             editable={false}
           />
-        </View>
-        <View style={{ marginTop: 10, rowGap: 10 }}>
-          <Text style={styles.textName}>District</Text>
-          <View style={styles.picker}>
-            <Picker
-              selectedValue={selectedDistrict}
-              onValueChange={(itemValue, itemIndex) =>
-                setSelectedDistrict(itemValue)
-              }
-            >
-              <Picker.Item label="Ratnapura" value="Ratnapura" />
-              <Picker.Item label="Colombo" value="Colombo" />
-              <Picker.Item label="Kandy" value="Kandy" />
-              <Picker.Item label="Galle" value="Galle" />
-            </Picker>
-          </View>
-        </View>
-
-        <View style={{ marginTop: 10, rowGap: 10 }}>
-          <Text style={styles.textName}>City</Text>
-          <View style={styles.picker}>
-            <Picker
-              selectedValue={selectedCity}
-              onValueChange={(itemValue, itemIndex) =>
-                setSelectedCity(itemValue)
-              }
-            >
-              <Picker.Item label="Ratnapura" value="Ratnapura" />
-              <Picker.Item label="Colombo" value="Colombo" />
-              <Picker.Item label="Kandy" value="Kandy" />
-              <Picker.Item label="Galle" value="Galle" />
-            </Picker>
-          </View>
         </View>
 
         <Pressable

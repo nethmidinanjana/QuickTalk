@@ -37,6 +37,7 @@ export default function Home() {
         const json = await response.json();
 
         if (json.success) {
+          console.log(json.message);
           setChatArray(JSON.parse(json.jsonChatArray));
         }
       }
